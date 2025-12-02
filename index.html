@@ -1,1 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>VidPlus Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg-main: #0b0b0f;
+      --bg-elevated: #16161d;
+      --bg-elevated-soft: #1d1d26;
+      --text-main: #f5f5f5;
+      --text-muted: #b0b0c0;
+      --accent: #e57373;
+      --accent-soft: #f28a8a;
+      --accent-strong: #d75c5c;
+      --divider: #2a2a38;
+      --border-subtle: #2e2e3b;
+      --header-height: 64px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top left, #171724 0, #050509 50%, #020205 100%);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body.theatre-mode {
+      background: #000;
+    }
+
+    body.theatre-mode .app-header {
+      background: rgba(5,5,10,0.95);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      background: linear-gradient(to bottom, #101018, rgba(8,8,12,0.96));
+      border-bottom: 1px solid var(--border-subtle);
+      backdrop-filter: blur(12px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: conic-gradient(from 210deg, #e57373, #f6a0a0, #e57373);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 18px rgba(229,115,115,0.7);
+    }
+
+    .logo-mark span {
+      font-weight: 800;
+      font-size: 16px;
+      color: #ffffff;
+      text-shadow: 0 0 6px rgba(0,0,0,0.8);
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .logo-title {
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      font-size: 18px;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      opacity: 0.85;
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .search-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-input-wrap input {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(10,10,18,0.9);
+      padding: 0.45rem 2.2rem 0.45rem 0.9rem;
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .search-input-wrap input::placeholder {
+      color: rgba(180,180,210,0.6);
+    }
+
+    .search-input-wrap input:focus {
+      border-color: rgba(229,115,115,0.9);
+      box-shadow: 0 0 0 1px rgba(229,115,115,0.5);
+      background: rgba(12,12,22,0.98);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 0.65rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: rgba(200,200,220,0.8);
+      pointer-events: none;
+    }
+
+    .search-btn {
+      border-radius: 999px;
+      border: none;
+      padding: 0.4rem 0.9rem;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(229,115,115,0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+      white-space: nowrap;
+    }
+
+    .search-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 14px rgba(229,115,115,0.8);
+      filter: brightness(1.03);
+    }
+
+    .search-btn span.icon {
+      font-size: 14px;
+    }
+
+    .app-main {
+      flex: 1;
+      padding: 1rem min(4vw, 2.5rem) 3rem;
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .home-view,
+    .watch-view {
+      display: none;
+    }
+
+    .home-view.active,
+    .watch-view.active {
+      display: block;
+    }
+
+    .section {
+      margin-top: 1.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .section-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .carousel {
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;
+      padding-bottom: 0.35rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(120,120,150,0.7) transparent;
+    }
+
+    .carousel::-webkit-scrollbar {
+      height: 6px;
+    }
+    .carousel::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .carousel::-webkit-scrollbar-thumb {
+      background: rgba(140,140,180,0.7);
+      border-radius: 999px;
+    }
+
+    .card {
+      min-width: 140px;
+      max-width: 160px;
+      background: radial-gradient(circle at top, #1b1b26 0, #12121a 60%, #0d0d14 100%);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.03);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-poster-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      background: #222233;
+      overflow: hidden;
+    }
+
+    .card-poster-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.18s ease;
+    }
+
+    .card:hover .card-poster-wrap img {
+      transform: scale(1.05);
+    }
+
+    .card-type-tag {
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-radius: 999px;
+      padding: 3px 7px;
+      background: rgba(5,5,10,0.8);
+      border: 1px solid rgba(255,255,255,0.25);
+      backdrop-filter: blur(6px);
+    }
+
+    .card-body {
+      padding: 0.45rem 0.55rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.2;
+      max-height: 3em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .chip {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(12,12,18,0.9);
+      color: var(--text-muted);
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.35rem;
+      margin-top: 0.25rem;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 0.27rem 0.6rem;
+      font-size: 11px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      white-space: nowrap;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+      color: #fff;
+      box-shadow: 0 0 10px rgba(229,115,115,0.5);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(14,14,22,0.95);
+      border-color: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(255,255,255,0.16);
+      background: rgba(22,22,32,0.98);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: rgba(255,255,255,0.18);
+      color: #ffffff;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.06);
+    }
+
+    .btn-icon {
+      padding: 0.3rem;
+      border-radius: 999px;
+      width: 30px;
+      height: 30px;
+    }
+
+    .empty-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* Search results overlay */
+    .search-results-panel {
+      position: fixed;
+      left: 50%;
+      top: calc(var(--header-height) + 6px);
+      transform: translateX(-50%);
+      width: min(860px, 96vw);
+      max-height: 60vh;
+      background: rgba(10,10,18,0.98);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 16px 50px rgba(0,0,0,0.85);
+      backdrop-filter: blur(16px);
+      z-index: 60;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .search-results-panel.active {
+      display: flex;
+    }
+
+    .search-results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .search-results-header-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .search-results-list {
+      padding: 0.4rem 0.4rem 0.7rem;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .search-result-item {
+      display: flex;
+      gap: 0.6rem;
+      padding: 0.35rem 0.4rem;
+      border-radius: 10px;
+      transition: background 0.12s ease;
+    }
+
+    .search-result-item:hover {
+      background: rgba(255,255,255,0.04);
+    }
+
+    .search-thumb {
+      width: 56px;
+      height: 80px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #222233;
+      flex-shrink: 0;
+    }
+
+    .search-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .search-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .search-title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+
+    .search-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .search-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .search-actions {
+      display: flex;
+      gap: 0.3rem;
+      margin-top: 0.15rem;
+    }
+
+    .watch-view {
+      margin-top: 0.5rem;
+    }
+
+    .watch-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr);
+      gap: 1.1rem;
+    }
+
+    @media (max-width: 900px) {
+      .watch-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .watch-main {
+      background: rgba(10,10,18,0.98);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.6rem 0.6rem 0.8rem;
+      box-shadow: 0 10px 34px rgba(0,0,0,0.8);
+    }
+
+    body.theatre-mode .watch-layout {
+      max-width: 100vw;
+    }
+
+    body.theatre-mode .watch-main {
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      border-bottom: none;
+      box-shadow: none;
+      padding-inline: 0;
+    }
+
+    .player-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
+      aspect-ratio: 16 / 9;
+      margin: 0 auto;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.85);
+    }
+
+    body.theatre-mode .player-wrapper {
+      max-width: 100vw;
+      border-radius: 0;
+    }
+
+    .player-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    .watch-controls-row {
+      margin-top: 0.6rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .watch-controls-left {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .watch-controls-right {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .watch-info-panel {
+      background: radial-gradient(circle at top left, #1c1c25 0, #111119 55%, #0d0d14 100%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.8rem 0.9rem 0.85rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.75);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .watch-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: baseline;
+    }
+
+    .watch-title-main {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .watch-title-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+
+    .watch-tags {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-top: 0.15rem;
+    }
+
+    .watch-description {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      max-height: 5.2em;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .watch-description.expanded {
+      max-height: none;
+    }
+
+    .watch-description::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1.6em;
+      background: linear-gradient(to top, rgba(12,12,18,1), rgba(12,12,18,0));
+      pointer-events: none;
+    }
+
+    .watch-description.expanded::after {
+      display: none;
+    }
+
+    .toggle-desc {
+      font-size: 11px;
+      color: var(--accent-soft);
+      cursor: pointer;
+      margin-top: 0.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .watch-secondary {
+      margin-top: 0.75rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.7fr);
+      gap: 0.7rem;
+    }
+
+    @media (max-width: 900px) {
+      .watch-secondary {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .panel {
+      background: rgba(10,10,16,0.96);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.55rem 0.6rem 0.6rem;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .episode-list {
+      max-height: 200px;
+      overflow-y: auto;
+      padding-right: 0.3rem;
+      margin-top: 0.2rem;
+    }
+
+    .episode-item {
+      font-size: 12px;
+      padding: 0.25rem 0.3rem;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .episode-item:hover {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+    }
+
+    .episode-item.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+      color: #fff;
+    }
+
+    .similar-row {
+      margin-top: 0.5rem;
+    }
+
+    .meta-pill {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.16);
+      color: var(--text-muted);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .app-header {
+        padding-inline: 0.8rem;
+      }
+      .search-bar {
+        max-width: 260px;
+      }
+      .app-main {
+        padding-inline: 0.9rem;
+      }
+      .card {
+        min-width: 130px;
+        max-width: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-mark"><span>V</span></div>
+      <div class="logo-text">
+        <div class="logo-title">VidPlus Hub</div>
+        <div class="logo-sub">Movies • TV • Anime</div>
+      </div>
+    </div>
+    <form class="search-bar" id="search-form">
+      <div class="search-input-wrap">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search movies, shows, or anime…"
+          autocomplete="off"
+        />
+        <span class="search-icon">🔍</span>
+      </div>
+      <button class="search-btn" type="submit">
+        <span class="icon">↵</span>
+        <span>Search</span>
+      </button>
+    </form>
+  </header>
+
+  <div class="search-results-panel" id="search-results">
+    <div class="search-results-header">
+      <div class="search-results-header-title" id="search-results-title">
+        Search results
+      </div>
+      <button class="btn btn-ghost btn-icon" type="button" id="search-close-btn" aria-label="Close search">
+        ✕
+      </button>
+    </div>
+    <div class="search-results-list" id="search-results-list"></div>
+  </div>
+
+  <main class="app-main">
+    <section class="home-view active" id="home-view">
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Continue Watching</div>
+            <div class="section-subtitle">Pick up where you left off.</div>
+          </div>
+        </div>
+        <div class="carousel" id="continue-carousel"></div>
+        <div class="empty-text" id="continue-empty" style="display:none;">
+          Nothing here yet. Start something and we’ll keep it handy.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Watchlist</div>
+            <div class="section-subtitle">Your saved titles.</div>
+          </div>
+        </div>
+        <div class="carousel" id="watchlist-carousel"></div>
+        <div class="empty-text" id="watchlist-empty" style="display:none;">
+          Use “Add to Watchlist” to stash stuff to watch later.
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-title" id="popular-movies-title">Popular Movies</div>
+            <div class="section-subtitle" id="popular-movies-subtitle">Trending in your region.</div>
+          </div>
+        </div>
+        <div class="carousel" id="popular-movies"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-title" id="popular-tv-title">Popular TV</div>
+            <div class="section-subtitle" id="popular-tv-subtitle">Series people are binging.</div>
+          </div>
+        </div>
+        <div class="carousel" id="popular-tv"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Popular Anime</div>
+            <div class="section-subtitle">Trending on AniList.</div>
+          </div>
+        </div>
+        <div class="carousel" id="popular-anime"></div>
+      </div>
+    </section>
+
+    <section class="watch-view" id="watch-view">
+      <button class="btn btn-secondary" type="button" id="back-home-btn">
+        ← Back to Home
+      </button>
+
+      <div class="watch-layout" style="margin-top:0.7rem;">
+        <div class="watch-main">
+          <div class="player-wrapper">
+            <iframe
+              id="vidplus-player"
+              src=""
+              allowfullscreen
+              allow="autoplay; encrypted-media"
+            ></iframe>
+          </div>
+          <div class="watch-controls-row">
+            <div class="watch-controls-left">
+              <button class="btn btn-primary" type="button" id="watchlist-toggle-btn">
+                ♥ Add to Watchlist
+              </button>
+              <button class="btn btn-secondary" type="button" id="theatre-toggle-btn">
+                🖥 Theatre Mode
+              </button>
+              <button class="btn btn-secondary" type="button" id="cast-toggle-btn">
+                📺 Cast (Chromecast)
+              </button>
+            </div>
+            <div class="watch-controls-right">
+              <span class="hint" id="watch-hint"></span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="watch-info-panel">
+          <div class="watch-title-row">
+            <div>
+              <div class="watch-title-main" id="watch-title">Title</div>
+              <div class="watch-title-meta" id="watch-title-meta"></div>
+              <div class="watch-tags" id="watch-tags"></div>
+            </div>
+          </div>
+          <div class="watch-description" id="watch-description"></div>
+          <div class="toggle-desc" id="toggle-desc-btn">Show more</div>
+          <div class="watch-secondary">
+            <div class="panel" id="episode-panel">
+              <div class="panel-title">Episodes</div>
+              <div class="hint" id="episode-panel-hint">Episodes will appear here for TV or anime.</div>
+              <div style="margin-top:0.3rem; display:flex; gap:0.3rem; align-items:center;" id="season-controls" hidden>
+                <label for="season-select" style="font-size:11px;color:var(--text-muted);">Season</label>
+                <select id="season-select" style="font-size:11px;padding:2px 6px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:#15151f;color:var(--text-main);"></select>
+              </div>
+              <div class="episode-list" id="episode-list"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-title">Similar Titles</div>
+              <div class="similar-row">
+                <div class="carousel" id="similar-carousel"></div>
+                <div class="empty-text" id="similar-empty" style="display:none;">
+                  We couldn’t load similar titles right now.
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // =========================
+    // Basic config / constants
+    // =========================
+    const TMDB_API_KEY = "REPLACE_WITH_YOUR_TMDB_KEY"; // <-- put your TMDB key here
+    const TMDB_BASE = "https://api.themoviedb.org/3";
+    const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
+    const TMDB_BACKDROP = "https://image.tmdb.org/t/p/w780";
+    const ANILIST_API = "https://graphql.anilist.co";
+
+    const VIDPLUS_OPTIONS = {
+      primarycolor: "E57373",
+      secondarycolor: "4A4A4A",
+      iconcolor: "FFFFFF",
+      autoplay: "true",
+      autonext: "true",
+      nextbutton: "true",
+      fontcolor: "FFFFFF",
+      fontsize: "16",
+      opacity: "0.75",
+      poster: "true",
+      title: "true",
+      icons: "vid",
+      watchparty: "true",
+      chromecast: "true",
+      episodelist: "true",
+      servericon: "false",
+      server: "14"
+    };
+
+    const LS_WATCHLIST_KEY = "vidplus_watchlist";
+    const LS_CONTINUE_KEY = "vidplus_continue";
+
+    // Normalized item shape:
+    // {
+    //   id: string,
+    //   source: "tmdb-movie" | "tmdb-tv" | "anilist-anime",
+    //   tmdbId?: number,
+    //   anilistId?: number,
+    //   title: string,
+    //   overview: string,
+    //   posterUrl: string,
+    //   backdropUrl?: string,
+    //   type: "movie" | "tv" | "anime",
+    //   year?: string,
+    //   season?: number,
+    //   episode?: number,
+    //   totalSeasons?: number,
+    //   totalEpisodes?: number
+    // }
+
+    const state = {
+      view: "home",
+      currentItem: null,
+      currentSeason: null,
+      episodes: [],
+      similar: [],
+      castEnabled: true
+    };
+
+    // Utility: region from navigator.language
+    function getRegionFromLanguage() {
+      try {
+        const lang = navigator.language || "en-US";
+        const parts = lang.split("-");
+        if (parts.length > 1) return parts[1].toUpperCase();
+      } catch {}
+      return "US";
+    }
+
+    const REGION = getRegionFromLanguage();
+
+    // =========================
+    // Local storage helpers
+    // =========================
+    function safeParseJSON(str, fallback) {
+      try {
+        return JSON.parse(str);
+      } catch {
+        return fallback;
+      }
+    }
+
+    function getWatchlist() {
+      const raw = localStorage.getItem(LS_WATCHLIST_KEY);
+      return safeParseJSON(raw, []);
+    }
+
+    function setWatchlist(list) {
+      localStorage.setItem(LS_WATCHLIST_KEY, JSON.stringify(list));
+    }
+
+    function getContinueList() {
+      const raw = localStorage.getItem(LS_CONTINUE_KEY);
+      return safeParseJSON(raw, []);
+    }
+
+    function setContinueList(list) {
+      localStorage.setItem(LS_CONTINUE_KEY, JSON.stringify(list));
+    }
+
+    function itemKey(item) {
+      return `${item.source}:${item.id}`;
+    }
+
+    function isInWatchlist(item) {
+      const list = getWatchlist();
+      return list.some(x => itemKey(x) === itemKey(item));
+    }
+
+    function addToWatchlist(item) {
+      const list = getWatchlist();
+      if (!isInWatchlist(item)) {
+        list.unshift(item);
+        setWatchlist(list.slice(0, 100));
+      }
+    }
+
+    function removeFromWatchlist(item) {
+      const list = getWatchlist();
+      const filtered = list.filter(x => itemKey(x) !== itemKey(item));
+      setWatchlist(filtered);
+    }
+
+    function updateContinue(item) {
+      const list = getContinueList();
+      const filtered = list.filter(x => itemKey(x) !== itemKey(item));
+      filtered.unshift(item);
+      setContinueList(filtered.slice(0, 40));
+    }
+
+    // =========================
+    // VidPlus URL builder
+    // =========================
+    function buildVidplusUrl(meta) {
+      let base = "";
+      if (meta.type === "movie") {
+        base = `https://player.vidplus.to/embed/movie/${meta.tmdbId}`;
+      } else if (meta.type === "tv") {
+        const season = meta.season || 1;
+        const episode = meta.episode || 1;
+        base = `https://player.vidplus.to/embed/tv/${meta.tmdbId}/${season}/${episode}`;
+      } else if (meta.type === "anime") {
+        const episode = meta.episode || 1;
+        const dubParam = meta.isDub ? "true" : "false";
+        base = `https://player.vidplus.to/embed/anime/${meta.anilistId}/${episode}?dub=${dubParam}`;
+      } else {
+        return "";
+      }
+
+      const query = Object.entries(VIDPLUS_OPTIONS)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join("&");
+
+      const sep = base.includes("?") ? "&" : "?";
+      return `${base}${sep}${query}`;
+    }
+
+    // =========================
+    // API helpers (TMDB / AniList)
+    // =========================
+    async function tmdbFetch(path, params = {}) {
+      if (!TMDB_API_KEY || TMDB_API_KEY === "REPLACE_WITH_YOUR_TMDB_KEY") {
+        throw new Error("TMDB API key not set");
+      }
+      const url = new URL(TMDB_BASE + path);
+      url.searchParams.set("api_key", TMDB_API_KEY);
+      url.searchParams.set("language", navigator.language || "en-US");
+      Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error("TMDB error");
+      return res.json();
+    }
+
+    async function anilistFetch(query, variables = {}) {
+      const res = await fetch(ANILIST_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, variables })
+      });
+      if (!res.ok) throw new Error("AniList error");
+      const json = await res.json();
+      return json.data;
+    }
+
+    function normalizeTmdbMovie(m) {
+      return {
+        id: String(m.id),
+        source: "tmdb-movie",
+        tmdbId: m.id,
+        anilistId: null,
+        title: m.title || m.original_title || "Untitled Movie",
+        overview: m.overview || "",
+        posterUrl: m.poster_path ? TMDB_IMG + m.poster_path : "",
+        backdropUrl: m.backdrop_path ? TMDB_BACKDROP + m.backdrop_path : "",
+        type: "movie",
+        year: (m.release_date || "").slice(0,4) || "",
+      };
+    }
+
+    function normalizeTmdbTV(t) {
+      return {
+        id: String(t.id),
+        source: "tmdb-tv",
+        tmdbId: t.id,
+        anilistId: null,
+        title: t.name || t.original_name || "Untitled Show",
+        overview: t.overview || "",
+        posterUrl: t.poster_path ? TMDB_IMG + t.poster_path : "",
+        backdropUrl: t.backdrop_path ? TMDB_BACKDROP + t.backdrop_path : "",
+        type: "tv",
+        year: (t.first_air_date || "").slice(0,4) || "",
+      };
+    }
+
+    function normalizeAnilistAnime(m) {
+      const title =
+        m.title.english ||
+        m.title.romaji ||
+        m.title.native ||
+        "Untitled Anime";
+
+      return {
+        id: String(m.id),
+        source: "anilist-anime",
+        tmdbId: null,
+        anilistId: m.id,
+        title,
+        overview: m.description ? m.description.replace(/<[^>]+>/g, "") : "",
+        posterUrl: m.coverImage?.extraLarge || m.coverImage?.large || "",
+        backdropUrl: m.bannerImage || "",
+        type: "anime",
+        year: m.seasonYear ? String(m.seasonYear) : "",
+        totalEpisodes: m.episodes || null
+      };
+    }
+
+    async function fetchPopularMovies() {
+      try {
+        const data = await tmdbFetch("/movie/popular", { region: REGION });
+        return (data.results || []).map(normalizeTmdbMovie);
+      } catch (e) {
+        console.warn("Popular movies error", e);
+        return [];
+      }
+    }
+
+    async function fetchPopularTV() {
+      try {
+        const data = await tmdbFetch("/tv/popular", { region: REGION });
+        return (data.results || []).map(normalizeTmdbTV);
+      } catch (e) {
+        console.warn("Popular tv error", e);
+        return [];
+      }
+    }
+
+    async function fetchPopularAnime() {
+      const query = `
+        query($page:Int=1,$perPage:Int=18){
+          Page(page:$page,perPage:$perPage){
+            media(type:ANIME,sort:TRENDING_DESC){
+              id
+              title{romaji english native}
+              description(asHtml:false)
+              coverImage{large extraLarge}
+              bannerImage
+              episodes
+              seasonYear
+            }
+          }
+        }
+      `;
+      try {
+        const data = await anilistFetch(query, { page: 1, perPage: 18 });
+        return (data.Page.media || []).map(normalizeAnilistAnime);
+      } catch (e) {
+        console.warn("Popular anime error", e);
+        return [];
+      }
+    }
+
+    async function searchAll(queryText) {
+      const q = queryText.trim();
+      if (!q) return [];
+      const tasks = [];
+
+      if (TMDB_API_KEY && TMDB_API_KEY !== "REPLACE_WITH_YOUR_TMDB_KEY") {
+        tasks.push(
+          tmdbFetch("/search/movie", { query: q }).then(r => (r.results||[]).map(normalizeTmdbMovie)).catch(() => [])
+        );
+        tasks.push(
+          tmdbFetch("/search/tv", { query: q }).then(r => (r.results||[]).map(normalizeTmdbTV)).catch(() => [])
+        );
+      } else {
+        tasks.push(Promise.resolve([]), Promise.resolve([]));
+      }
+
+      const anilistQuery = `
+        query($search:String,$page:Int=1,$perPage:Int=15){
+          Page(page:$page,perPage:$perPage){
+            media(type:ANIME,search:$search){
+              id
+              title{romaji english native}
+              description(asHtml:false)
+              coverImage{large extraLarge}
+              bannerImage
+              episodes
+              seasonYear
+            }
+          }
+        }
+      `;
+      tasks.push(
+        anilistFetch(anilistQuery, { search: q, page: 1, perPage: 15 })
+          .then(d => (d.Page.media || []).map(normalizeAnilistAnime))
+          .catch(() => [])
+      );
+
+      const [movies, tv, anime] = await Promise.all(tasks);
+      return [...movies, ...tv, ...anime].slice(0, 40);
+    }
+
+    async function fetchTVDetails(tmdbId) {
+      if (!tmdbId) return null;
+      try {
+        return await tmdbFetch(`/tv/${tmdbId}`);
+      } catch (e) {
+        console.warn("TV details error", e);
+        return null;
+      }
+    }
+
+    async function fetchSeasonEpisodes(tmdbId, seasonNumber) {
+      if (!tmdbId || !seasonNumber) return null;
+      try {
+        const data = await tmdbFetch(`/tv/${tmdbId}/season/${seasonNumber}`);
+        return data.episodes || [];
+      } catch (e) {
+        console.warn("Season episodes error", e);
+        return null;
+      }
+    }
+
+    async function fetchSimilar(item) {
+      try {
+        if (item.source === "tmdb-movie") {
+          const data = await tmdbFetch(`/movie/${item.tmdbId}/similar`);
+          return (data.results || []).map(normalizeTmdbMovie);
+        } else if (item.source === "tmdb-tv") {
+          const data = await tmdbFetch(`/tv/${item.tmdbId}/similar`);
+          return (data.results || []).map(normalizeTmdbTV);
+        } else if (item.source === "anilist-anime") {
+          const query = `
+            query($id:Int){
+              Media(id:$id,type:ANIME){
+                recommendations(sort:RATING_DESC){
+                  nodes{
+                    mediaRecommendation{
+                      id
+                      title{romaji english native}
+                      description(asHtml:false)
+                      coverImage{large extraLarge}
+                      bannerImage
+                      episodes
+                      seasonYear
+                    }
+                  }
+                }
+              }
+            }
+          `;
+          const data = await anilistFetch(query, { id: item.anilistId });
+          const nodes = data.Media?.recommendations?.nodes || [];
+          return nodes
+            .map(n => n.mediaRecommendation)
+            .filter(Boolean)
+            .map(normalizeAnilistAnime);
+        }
+      } catch (e) {
+        console.warn("Similar fetch error", e);
+      }
+      return [];
+    }
+
+    // =========================
+    // DOM helpers
+    // =========================
+    const $ = (id) => document.getElementById(id);
+
+    function createCard(item) {
+      const div = document.createElement("div");
+      div.className = "card";
+
+      const typeLabel = item.type === "movie"
+        ? "Movie"
+        : item.type === "tv"
+        ? "TV"
+        : "Anime";
+
+      const year = item.year || "";
+      const metaText = [];
+      if (year) metaText.push(year);
+
+      const inWatchlist = isInWatchlist(item);
+
+      div.innerHTML = `
+        <div class="card-poster-wrap">
+          <div class="card-type-tag">${typeLabel}</div>
+          <img src="${item.posterUrl || ""}" alt="">
+        </div>
+        <div class="card-body">
+          <div class="card-title" title="${item.title}">${item.title}</div>
+          <div class="card-meta">
+            <span>${metaText.join(" • ")}</span>
+            <span class="chip">${item.source.replace("tmdb-","").replace("anilist-","")}</span>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary btn-play" type="button">▶ Play</button>
+            <button class="btn btn-secondary btn-watchlist" type="button">
+              ${inWatchlist ? "✓ In Watchlist" : "+ Watchlist"}
+            </button>
+          </div>
+        </div>
+      `;
+
+      div.querySelector(".btn-play").addEventListener("click", () => {
+        openWatchView(item);
+      });
+
+      div.querySelector(".btn-watchlist").addEventListener("click", () => {
+        if (isInWatchlist(item)) {
+          removeFromWatchlist(item);
+        } else {
+          addToWatchlist(item);
+        }
+        renderWatchlistSection();
+        renderContinueSection();
+        // update own button text
+        const nowIn = isInWatchlist(item);
+        div.querySelector(".btn-watchlist").textContent = nowIn ? "✓ In Watchlist" : "+ Watchlist";
+      });
+
+      return div;
+    }
+
+    function renderCarousel(containerId, items) {
+      const container = $(containerId);
+      container.innerHTML = "";
+      items.forEach(item => container.appendChild(createCard(item)));
+    }
+
+    function renderWatchlistSection() {
+      const list = getWatchlist();
+      const empty = $("watchlist-empty");
+      if (!list.length) {
+        $("watchlist-carousel").innerHTML = "";
+        empty.style.display = "block";
+      } else {
+        empty.style.display = "none";
+        renderCarousel("watchlist-carousel", list);
+      }
+    }
+
+    function renderContinueSection() {
+      const list = getContinueList();
+      const empty = $("continue-empty");
+      if (!list.length) {
+        $("continue-carousel").innerHTML = "";
+        empty.style.display = "block";
+      } else {
+        empty.style.display = "none";
+        renderCarousel("continue-carousel", list);
+      }
+    }
+
+    function setView(view) {
+      state.view = view;
+      if (view === "home") {
+        $("home-view").classList.add("active");
+        $("watch-view").classList.remove("active");
+        document.body.classList.remove("theatre-mode");
+      } else {
+        $("home-view").classList.remove("active");
+        $("watch-view").classList.add("active");
+      }
+    }
+
+    function sanitize(text) {
+      return (text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function updateWatchInfoPanel(item) {
+      $("watch-title").textContent = item.title;
+      const metaBits = [];
+      if (item.type === "movie") metaBits.push("Movie");
+      if (item.type === "tv") metaBits.push("TV Series");
+      if (item.type === "anime") metaBits.push("Anime");
+      if (item.year) metaBits.push(item.year);
+      $("watch-title-meta").innerHTML = metaBits.map(m => `<span class="meta-pill">${m}</span>`).join(" ");
+
+      $("watch-tags").innerHTML = `
+        <span class="meta-pill">${item.source}</span>
+      `;
+
+      const descEl = $("watch-description");
+      descEl.innerHTML = sanitize(item.overview || "No description available.");
+      descEl.classList.remove("expanded");
+      $("toggle-desc-btn").textContent = "Show more";
+    }
+
+    function buildEpisodeList(items, activeEpisodeNumber) {
+      const listEl = $("episode-list");
+      listEl.innerHTML = "";
+      if (!items || !items.length) {
+        $("episode-panel-hint").style.display = "block";
+        return;
+      }
+      $("episode-panel-hint").style.display = "none";
+
+      items.forEach(ep => {
+        const epNum = ep.episode_number || ep.number || ep;
+        const epName = ep.name || `Episode ${epNum}`;
+        const epObj = document.createElement("div");
+        epObj.className = "episode-item" + (epNum === activeEpisodeNumber ? " active" : "");
+        epObj.innerHTML = `
+          <span>${epNum}. ${sanitize(epName)}</span>
+        `;
+        epObj.addEventListener("click", () => {
+          if (!state.currentItem) return;
+          if (state.currentItem.type === "tv") {
+            state.currentItem.episode = epNum;
+          } else if (state.currentItem.type === "anime") {
+            state.currentItem.episode = epNum;
+          }
+          playCurrentItem(true);
+          // update ep list active state
+          Array.from(listEl.children).forEach(child => child.classList.remove("active"));
+          epObj.classList.add("active");
+        });
+        listEl.appendChild(epObj);
+      });
+    }
+
+    async function loadEpisodesForCurrentItem() {
+      const item = state.currentItem;
+      $("episode-list").innerHTML = "";
+      $("episode-panel-hint").style.display = "block";
+      $("season-controls").hidden = true;
+
+      if (!item || (item.type !== "tv" && item.type !== "anime")) return;
+
+      if (item.type === "tv") {
+        const details = await fetchTVDetails(item.tmdbId);
+        if (!details) return;
+        const seasons = (details.seasons || []).filter(s => s.season_number > 0);
+        if (!seasons.length) return;
+        const seasonSelect = $("season-select");
+        seasonSelect.innerHTML = "";
+        seasons.forEach(s => {
+          const opt = document.createElement("option");
+          opt.value = s.season_number;
+          opt.textContent = `Season ${s.season_number}`;
+          seasonSelect.appendChild(opt);
+        });
+        $("season-controls").hidden = false;
+
+        let selectedSeason = item.season || seasons[0].season_number;
+        state.currentSeason = selectedSeason;
+        seasonSelect.value = String(selectedSeason);
+
+        seasonSelect.onchange = async () => {
+          const val = Number(seasonSelect.value);
+          state.currentSeason = val;
+          state.currentItem.season = val;
+          const eps = await fetchSeasonEpisodes(item.tmdbId, val);
+          state.episodes = eps || [];
+          buildEpisodeList(state.episodes, state.currentItem.episode || 1);
+        };
+
+        const eps = await fetchSeasonEpisodes(item.tmdbId, selectedSeason);
+        state.episodes = eps || [];
+        buildEpisodeList(state.episodes, item.episode || 1);
+
+      } else if (item.type === "anime") {
+        const total = item.totalEpisodes || 24;
+        const arr = [];
+        for (let i = 1; i <= total; i++) arr.push({ number: i });
+        state.episodes = arr;
+        buildEpisodeList(arr, item.episode || 1);
+      }
+    }
+
+    async function loadSimilarForCurrentItem() {
+      const item = state.currentItem;
+      if (!item) return;
+      const similar = await fetchSimilar(item);
+      state.similar = similar;
+      const empty = $("similar-empty");
+      const container = $("similar-carousel");
+      if (!similar.length) {
+        container.innerHTML = "";
+        empty.style.display = "block";
+      } else {
+        empty.style.display = "none";
+        renderCarousel("similar-carousel", similar);
+      }
+    }
+
+    function playCurrentItem(skipUpdateContinue) {
+      if (!state.currentItem) return;
+      const url = buildVidplusUrl(state.currentItem);
+      const iframe = $("vidplus-player");
+      iframe.src = url;
+
+      if (!skipUpdateContinue) {
+        updateContinue(state.currentItem);
+        renderContinueSection();
+      }
+
+      const wtBtn = $("watchlist-toggle-btn");
+      wtBtn.textContent = isInWatchlist(state.currentItem)
+        ? "♥ In Watchlist"
+        : "♥ Add to Watchlist";
+
+      $("watch-hint").textContent = "Using VidPlus player. Some titles may require external APIs.";
+    }
+
+    async function openWatchView(item) {
+      state.currentItem = { ...item }; // shallow copy
+      if (state.currentItem.type === "tv") {
+        state.currentItem.season = state.currentItem.season || 1;
+        state.currentItem.episode = state.currentItem.episode || 1;
+      } else if (state.currentItem.type === "anime") {
+        state.currentItem.episode = state.currentItem.episode || 1;
+        state.currentItem.isDub = false;
+      }
+
+      setView("watch");
+      updateWatchInfoPanel(state.currentItem);
+      playCurrentItem(false);
+      loadEpisodesForCurrentItem();
+      loadSimilarForCurrentItem();
+    }
+
+    // =========================
+    // Search UI
+    // =========================
+    async function handleSearchSubmit(event) {
+      event.preventDefault();
+      const q = $("search-input").value.trim();
+      if (!q) return;
+      $("search-results-title").textContent = `Searching for “${q}”…`;
+      const panel = $("search-results");
+      const listEl = $("search-results-list");
+      panel.classList.add("active");
+      listEl.innerHTML = `<div class="empty-text">Loading results…</div>`;
+
+      try {
+        const items = await searchAll(q);
+        if (!items.length) {
+          listEl.innerHTML = `<div class="empty-text" style="padding:0.4rem;">No results found. Try another title.</div>`;
+          $("search-results-title").textContent = `No results for “${q}”`;
+          return;
+        }
+        $("search-results-title").textContent = `Results for “${q}”`;
+        listEl.innerHTML = "";
+        items.forEach(item => {
+          const row = document.createElement("div");
+          row.className = "search-result-item";
+          const typeLabel = item.type === "movie" ? "Movie"
+                           : item.type === "tv" ? "TV"
+                           : "Anime";
+          const inList = isInWatchlist(item);
+          row.innerHTML = `
+            <div class="search-thumb">
+              <img src="${item.posterUrl || ""}" alt="">
+            </div>
+            <div class="search-content">
+              <div class="search-title-row">
+                <div class="search-title">${sanitize(item.title)}</div>
+              </div>
+              <div class="search-meta">
+                <span>${typeLabel}</span>
+                ${item.year ? `<span>• ${item.year}</span>` : ""}
+                <span>• ${item.source}</span>
+              </div>
+              <div class="search-actions">
+                <button class="btn btn-primary btn-play" type="button">▶ Play</button>
+                <button class="btn btn-secondary btn-watchlist" type="button">
+                  ${inList ? "✓ In Watchlist" : "+ Watchlist"}
+                </button>
+              </div>
+            </div>
+          `;
+          const playBtn = row.querySelector(".btn-play");
+          const wBtn = row.querySelector(".btn-watchlist");
+
+          playBtn.addEventListener("click", () => {
+            panel.classList.remove("active");
+            openWatchView(item);
+          });
+
+          wBtn.addEventListener("click", () => {
+            if (isInWatchlist(item)) {
+              removeFromWatchlist(item);
+            } else {
+              addToWatchlist(item);
+            }
+            wBtn.textContent = isInWatchlist(item) ? "✓ In Watchlist" : "+ Watchlist";
+            renderWatchlistSection();
+          });
+
+          listEl.appendChild(row);
+        });
+      } catch (e) {
+        console.warn("Search error", e);
+        $("search-results-title").textContent = `Error searching for “${q}”`;
+        listEl.innerHTML = `<div class="empty-text" style="padding:0.4rem;">Error loading search results.</div>`;
+      }
+    }
+
+    function closeSearchPanel() {
+      $("search-results").classList.remove("active");
+    }
+
+    // =========================
+    // Event wiring
+    // =========================
+    function wireEvents() {
+      $("search-form").addEventListener("submit", handleSearchSubmit);
+      $("search-close-btn").addEventListener("click", closeSearchPanel);
+
+      $("back-home-btn").addEventListener("click", () => {
+        setView("home");
+      });
+
+      $("theatre-toggle-btn").addEventListener("click", () => {
+        const isTheatre = document.body.classList.toggle("theatre-mode");
+        $("theatre-toggle-btn").textContent = isTheatre ? "🖥 Exit Theatre" : "🖥 Theatre Mode";
+      });
+
+      $("cast-toggle-btn").addEventListener("click", () => {
+        // We rely on VidPlus chromecast=true. This button just shows a small hint.
+        state.castEnabled = !state.castEnabled;
+        VIDPLUS_OPTIONS.chromecast = state.castEnabled ? "true" : "false";
+        $("cast-toggle-btn").textContent = state.castEnabled ? "📺 Cast (Chromecast)" : "📺 Cast Off";
+        // Reload current player with updated chromecast flag if something is playing
+        if (state.currentItem) {
+          playCurrentItem(true);
+        }
+      });
+
+      $("watchlist-toggle-btn").addEventListener("click", () => {
+        if (!state.currentItem) return;
+        if (isInWatchlist(state.currentItem)) {
+          removeFromWatchlist(state.currentItem);
+        } else {
+          addToWatchlist(state.currentItem);
+        }
+        $("watchlist-toggle-btn").textContent = isInWatchlist(state.currentItem)
+          ? "♥ In Watchlist"
+          : "♥ Add to Watchlist";
+        renderWatchlistSection();
+      });
+
+      $("toggle-desc-btn").addEventListener("click", () => {
+        const desc = $("watch-description");
+        const expanded = desc.classList.toggle("expanded");
+        $("toggle-desc-btn").textContent = expanded ? "Show less" : "Show more";
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if ($("search-results").classList.contains("active")) {
+            closeSearchPanel();
+          }
+        }
+      });
+    }
+
+    // =========================
+    // Initial load
+    // =========================
+    async function initHome() {
+      // Update popular labels with region
+      $("popular-movies-title").textContent = `Popular Movies in ${REGION}`;
+      $("popular-tv-title").textContent = `Popular TV in ${REGION}`;
+
+      renderWatchlistSection();
+      renderContinueSection();
+
+      // Fire off popular fetches
+      const [movies, tv, anime] = await Promise.all([
+        fetchPopularMovies(),
+        fetchPopularTV(),
+        fetchPopularAnime()
+      ]);
+
+      if (movies.length) {
+        renderCarousel("popular-movies", movies.slice(0, 16));
+      } else {
+        $("popular-movies").innerHTML =
+          `<div class="empty-text">Could not load popular movies. Check your TMDB key.</div>`;
+      }
+
+      if (tv.length) {
+        renderCarousel("popular-tv", tv.slice(0, 16));
+      } else {
+        $("popular-tv").innerHTML =
+          `<div class="empty-text">Could not load popular TV. Check your TMDB key.</div>`;
+      }
+
+      if (anime.length) {
+        renderCarousel("popular-anime", anime.slice(0, 18));
+      } else {
+        $("popular-anime").innerHTML =
+          `<div class="empty-text">Could not load popular anime right now.</div>`;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      wireEvents();
+      setView("home");
+      initHome();
+    });
+  </script>
+</body>
+</html>
 
