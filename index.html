@@ -929,6 +929,90 @@
     const LS_WATCHLIST_KEY = "vidplus_watchlist";
     const LS_CONTINUE_KEY = "vidplus_continue";
 
+    // Offline-friendly sample data to use when network calls fail
+    const SAMPLE_LIBRARY = {
+      movies: [
+        {
+          id: "603692",
+          source: "tmdb-movie",
+          tmdbId: null,
+          anilistId: null,
+          title: "John Wick: Chapter 4",
+          overview: "John Wick uncovers a path to defeating the High Table but must face a new enemy.",
+          posterUrl: "https://image.tmdb.org/t/p/w342/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg",
+          backdropUrl: "https://image.tmdb.org/t/p/w780/ik9SVGcYxKg6y2a9cW0e0WchImW.jpg",
+          type: "movie",
+          year: "2023"
+        },
+        {
+          id: "385687",
+          source: "tmdb-movie",
+          tmdbId: null,
+          anilistId: null,
+          title: "Fast X",
+          overview: "Dom Toretto and his family face the most lethal opponent they've ever encountered.",
+          posterUrl: "https://image.tmdb.org/t/p/w342/fiVW06jE7z9YnO4trhaMEdclSiC.jpg",
+          backdropUrl: "https://image.tmdb.org/t/p/w780/6Gk6NNTkKqkZQS0UBOOhvUo1VoY.jpg",
+          type: "movie",
+          year: "2023"
+        }
+      ],
+      tv: [
+        {
+          id: "1396",
+          source: "tmdb-tv",
+          tmdbId: null,
+          anilistId: null,
+          title: "Breaking Bad",
+          overview: "A chemistry teacher teams up with a former student to secure his family's future.",
+          posterUrl: "https://image.tmdb.org/t/p/w342/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
+          backdropUrl: "https://image.tmdb.org/t/p/w780/eSzpy96DwBujGFj0xMbXBcGcfxX.jpg",
+          type: "tv",
+          year: "2008"
+        },
+        {
+          id: "66732",
+          source: "tmdb-tv",
+          tmdbId: null,
+          anilistId: null,
+          title: "Stranger Things",
+          overview: "A group of young friends witness supernatural forces and secret government exploits.",
+          posterUrl: "https://image.tmdb.org/t/p/w342/qQ8OEUgnZtlS1aqF3ad0bfedqsH.jpg",
+          backdropUrl: "https://image.tmdb.org/t/p/w780/56v2KjBlU4XaOv9rVYEQypROD7P.jpg",
+          type: "tv",
+          year: "2016"
+        }
+      ],
+      anime: [
+        {
+          id: "5114",
+          source: "anilist-anime",
+          tmdbId: null,
+          anilistId: 5114,
+          title: "Fullmetal Alchemist: Brotherhood",
+          overview: "Two brothers search for the Philosopher's Stone after a tragic alchemy accident.",
+          posterUrl: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx5114-BqrLT0dxfQFa.png",
+          backdropUrl: "",
+          type: "anime",
+          year: "2009",
+          totalEpisodes: 64
+        },
+        {
+          id: "11061",
+          source: "anilist-anime",
+          tmdbId: null,
+          anilistId: 11061,
+          title: "Hunter x Hunter (2011)",
+          overview: "Young Gon Freecss becomes a Hunter to find his father and discovers new adventures.",
+          posterUrl: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/nx11061-3MuBrs7cY7aX.jpg",
+          backdropUrl: "",
+          type: "anime",
+          year: "2011",
+          totalEpisodes: 148
+        }
+      ]
+    };
+
     // Normalized item shape:
     // {
     //   id: string,
@@ -971,30 +1055,30 @@
     // =========================
     // Local storage helpers
     // =========================
-    function safeParseJSON(str, fallback) {
+    function safeParseArray(str) {
+      if (!str) return [];
       try {
-        return JSON.parse(str);
+        const parsed = JSON.parse(str);
+        return Array.isArray(parsed) ? parsed : [];
       } catch {
-        return fallback;
+        return [];
       }
     }
 
     function getWatchlist() {
-      const raw = localStorage.getItem(LS_WATCHLIST_KEY);
-      return safeParseJSON(raw, []);
+      return safeParseArray(localStorage.getItem(LS_WATCHLIST_KEY));
     }
 
     function setWatchlist(list) {
-      localStorage.setItem(LS_WATCHLIST_KEY, JSON.stringify(list));
+      localStorage.setItem(LS_WATCHLIST_KEY, JSON.stringify(list || []));
     }
 
     function getContinueList() {
-      const raw = localStorage.getItem(LS_CONTINUE_KEY);
-      return safeParseJSON(raw, []);
+      return safeParseArray(localStorage.getItem(LS_CONTINUE_KEY));
     }
 
     function setContinueList(list) {
-      localStorage.setItem(LS_CONTINUE_KEY, JSON.stringify(list));
+      localStorage.setItem(LS_CONTINUE_KEY, JSON.stringify(list || []));
     }
 
     function itemKey(item) {
@@ -1134,22 +1218,30 @@
     }
 
     async function fetchPopularMovies() {
+      if (!TMDB_API_KEY || TMDB_API_KEY === "REPLACE_WITH_YOUR_TMDB_KEY") {
+        return SAMPLE_LIBRARY.movies;
+      }
       try {
         const data = await tmdbFetch("/movie/popular", { region: REGION });
-        return (data.results || []).map(normalizeTmdbMovie);
+        const items = (data.results || []).map(normalizeTmdbMovie);
+        return items.length ? items : SAMPLE_LIBRARY.movies;
       } catch (e) {
         console.warn("Popular movies error", e);
-        return [];
+        return SAMPLE_LIBRARY.movies;
       }
     }
 
     async function fetchPopularTV() {
+      if (!TMDB_API_KEY || TMDB_API_KEY === "REPLACE_WITH_YOUR_TMDB_KEY") {
+        return SAMPLE_LIBRARY.tv;
+      }
       try {
         const data = await tmdbFetch("/tv/popular", { region: REGION });
-        return (data.results || []).map(normalizeTmdbTV);
+        const items = (data.results || []).map(normalizeTmdbTV);
+        return items.length ? items : SAMPLE_LIBRARY.tv;
       } catch (e) {
         console.warn("Popular tv error", e);
-        return [];
+        return SAMPLE_LIBRARY.tv;
       }
     }
 
@@ -1171,10 +1263,11 @@
       `;
       try {
         const data = await anilistFetch(query, { page: 1, perPage: 18 });
-        return (data.Page.media || []).map(normalizeAnilistAnime);
+        const items = (data.Page.media || []).map(normalizeAnilistAnime);
+        return items.length ? items : SAMPLE_LIBRARY.anime;
       } catch (e) {
         console.warn("Popular anime error", e);
-        return [];
+        return SAMPLE_LIBRARY.anime;
       }
     }
 
@@ -1182,6 +1275,7 @@
       const q = queryText.trim();
       if (!q) return [];
       const tasks = [];
+      const qLower = q.toLowerCase();
 
       if (TMDB_API_KEY && TMDB_API_KEY !== "REPLACE_WITH_YOUR_TMDB_KEY") {
         tasks.push(
@@ -1216,7 +1310,17 @@
       );
 
       const [movies, tv, anime] = await Promise.all(tasks);
-      return [...movies, ...tv, ...anime].slice(0, 40);
+      const combined = [...movies, ...tv, ...anime];
+      if (combined.length) return combined.slice(0, 40);
+
+      const samplePool = [
+        ...SAMPLE_LIBRARY.movies,
+        ...SAMPLE_LIBRARY.tv,
+        ...SAMPLE_LIBRARY.anime
+      ];
+      return samplePool
+        .filter(item => item.title.toLowerCase().includes(qLower))
+        .slice(0, 40);
     }
 
     async function fetchTVDetails(tmdbId) {
@@ -1349,7 +1453,7 @@
     }
 
     function renderWatchlistSection() {
-      const list = getWatchlist();
+      const list = getWatchlist() || [];
       const empty = $("watchlist-empty");
       if (!list.length) {
         $("watchlist-carousel").innerHTML = "";
@@ -1361,7 +1465,7 @@
     }
 
     function renderContinueSection() {
-      const list = getContinueList();
+      const list = getContinueList() || [];
       const empty = $("continue-empty");
       if (!list.length) {
         $("continue-carousel").innerHTML = "";
