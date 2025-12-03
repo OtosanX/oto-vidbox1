@@ -1055,30 +1055,30 @@
     // =========================
     // Local storage helpers
     // =========================
-    function safeParseJSON(str, fallback) {
+    function safeParseArray(str) {
+      if (!str) return [];
       try {
-        return JSON.parse(str);
+        const parsed = JSON.parse(str);
+        return Array.isArray(parsed) ? parsed : [];
       } catch {
-        return fallback;
+        return [];
       }
     }
 
     function getWatchlist() {
-      const raw = localStorage.getItem(LS_WATCHLIST_KEY);
-      return safeParseJSON(raw, []);
+      return safeParseArray(localStorage.getItem(LS_WATCHLIST_KEY));
     }
 
     function setWatchlist(list) {
-      localStorage.setItem(LS_WATCHLIST_KEY, JSON.stringify(list));
+      localStorage.setItem(LS_WATCHLIST_KEY, JSON.stringify(list || []));
     }
 
     function getContinueList() {
-      const raw = localStorage.getItem(LS_CONTINUE_KEY);
-      return safeParseJSON(raw, []);
+      return safeParseArray(localStorage.getItem(LS_CONTINUE_KEY));
     }
 
     function setContinueList(list) {
-      localStorage.setItem(LS_CONTINUE_KEY, JSON.stringify(list));
+      localStorage.setItem(LS_CONTINUE_KEY, JSON.stringify(list || []));
     }
 
     function itemKey(item) {
@@ -1453,7 +1453,7 @@
     }
 
     function renderWatchlistSection() {
-      const list = getWatchlist();
+      const list = getWatchlist() || [];
       const empty = $("watchlist-empty");
       if (!list.length) {
         $("watchlist-carousel").innerHTML = "";
@@ -1465,7 +1465,7 @@
     }
 
     function renderContinueSection() {
-      const list = getContinueList();
+      const list = getContinueList() || [];
       const empty = $("continue-empty");
       if (!list.length) {
         $("continue-carousel").innerHTML = "";
