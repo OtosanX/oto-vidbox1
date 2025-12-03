@@ -546,6 +546,27 @@
       display: block;
     }
 
+    .player-status {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(10, 10, 14, 0.78);
+      color: #d0d0dc;
+      font-size: 12px;
+      letter-spacing: 0.01em;
+      border: 1px solid rgba(255,255,255,0.08);
+      max-width: calc(100% - 24px);
+      pointer-events: none;
+    }
+
+    .player-status.error {
+      color: #ffdede;
+      border-color: rgba(255, 105, 105, 0.7);
+      background: rgba(64, 10, 10, 0.78);
+    }
+
     .watch-controls-row {
       margin-top: 0.6rem;
       display: flex;
@@ -833,7 +854,7 @@
         ← Back to Home
       </button>
 
-      <div class="watch-layout" style="margin-top:0.7rem;">
+          <div class="watch-layout" style="margin-top:0.7rem;">
         <div class="watch-main">
           <div class="player-wrapper">
             <iframe
@@ -842,6 +863,7 @@
               allowfullscreen
               allow="autoplay; encrypted-media"
             ></iframe>
+            <div class="player-status" id="player-status"></div>
           </div>
           <div class="watch-controls-row">
             <div class="watch-controls-left">
@@ -926,8 +948,94 @@
       server: "14"
     };
 
+    const VIDPLUS_PROBE_URL = "https://player.vidplus.to/embed/ping";
+
     const LS_WATCHLIST_KEY = "vidplus_watchlist";
     const LS_CONTINUE_KEY = "vidplus_continue";
+
+    // Offline-friendly sample data to use when network calls fail
+    const SAMPLE_LIBRARY = {
+      movies: [
+        {
+          id: "603692",
+          source: "tmdb-movie",
+          tmdbId: null,
+          anilistId: null,
+          title: "John Wick: Chapter 4",
+          overview: "John Wick uncovers a path to defeating the High Table but must face a new enemy.",
+          posterUrl: "https://image.tmdb.org/t/p/w342/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg",
+          backdropUrl: "https://image.tmdb.org/t/p/w780/ik9SVGcYxKg6y2a9cW0e0WchImW.jpg",
+          type: "movie",
+          year: "2023"
+        },
+        {
+          id: "385687",
+          source: "tmdb-movie",
+          tmdbId: null,
+          anilistId: null,
+          title: "Fast X",
+          overview: "Dom Toretto and his family face the most lethal opponent they've ever encountered.",
+          posterUrl: "https://image.tmdb.org/t/p/w342/fiVW06jE7z9YnO4trhaMEdclSiC.jpg",
+          backdropUrl: "https://image.tmdb.org/t/p/w780/6Gk6NNTkKqkZQS0UBOOhvUo1VoY.jpg",
+          type: "movie",
+          year: "2023"
+        }
+      ],
+      tv: [
+        {
+          id: "1396",
+          source: "tmdb-tv",
+          tmdbId: null,
+          anilistId: null,
+          title: "Breaking Bad",
+          overview: "A chemistry teacher teams up with a former student to secure his family's future.",
+          posterUrl: "https://image.tmdb.org/t/p/w342/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
+          backdropUrl: "https://image.tmdb.org/t/p/w780/eSzpy96DwBujGFj0xMbXBcGcfxX.jpg",
+          type: "tv",
+          year: "2008"
+        },
+        {
+          id: "66732",
+          source: "tmdb-tv",
+          tmdbId: null,
+          anilistId: null,
+          title: "Stranger Things",
+          overview: "A group of young friends witness supernatural forces and secret government exploits.",
+          posterUrl: "https://image.tmdb.org/t/p/w342/qQ8OEUgnZtlS1aqF3ad0bfedqsH.jpg",
+          backdropUrl: "https://image.tmdb.org/t/p/w780/56v2KjBlU4XaOv9rVYEQypROD7P.jpg",
+          type: "tv",
+          year: "2016"
+        }
+      ],
+      anime: [
+        {
+          id: "5114",
+          source: "anilist-anime",
+          tmdbId: null,
+          anilistId: 5114,
+          title: "Fullmetal Alchemist: Brotherhood",
+          overview: "Two brothers search for the Philosopher's Stone after a tragic alchemy accident.",
+          posterUrl: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx5114-BqrLT0dxfQFa.png",
+          backdropUrl: "",
+          type: "anime",
+          year: "2009",
+          totalEpisodes: 64
+        },
+        {
+          id: "11061",
+          source: "anilist-anime",
+          tmdbId: null,
+          anilistId: 11061,
+          title: "Hunter x Hunter (2011)",
+          overview: "Young Gon Freecss becomes a Hunter to find his father and discovers new adventures.",
+          posterUrl: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/nx11061-3MuBrs7cY7aX.jpg",
+          backdropUrl: "",
+          type: "anime",
+          year: "2011",
+          totalEpisodes: 148
+        }
+      ]
+    };
 
     // Normalized item shape:
     // {
@@ -953,7 +1061,8 @@
       currentSeason: null,
       episodes: [],
       similar: [],
-      castEnabled: true
+      castEnabled: true,
+      playerReachable: false
     };
 
     // Utility: region from navigator.language
@@ -971,30 +1080,30 @@
     // =========================
     // Local storage helpers
     // =========================
-    function safeParseJSON(str, fallback) {
+    function safeParseArray(str) {
+      if (!str) return [];
       try {
-        return JSON.parse(str);
+        const parsed = JSON.parse(str);
+        return Array.isArray(parsed) ? parsed : [];
       } catch {
-        return fallback;
+        return [];
       }
     }
 
     function getWatchlist() {
-      const raw = localStorage.getItem(LS_WATCHLIST_KEY);
-      return safeParseJSON(raw, []);
+      return safeParseArray(localStorage.getItem(LS_WATCHLIST_KEY));
     }
 
     function setWatchlist(list) {
-      localStorage.setItem(LS_WATCHLIST_KEY, JSON.stringify(list));
+      localStorage.setItem(LS_WATCHLIST_KEY, JSON.stringify(list || []));
     }
 
     function getContinueList() {
-      const raw = localStorage.getItem(LS_CONTINUE_KEY);
-      return safeParseJSON(raw, []);
+      return safeParseArray(localStorage.getItem(LS_CONTINUE_KEY));
     }
 
     function setContinueList(list) {
-      localStorage.setItem(LS_CONTINUE_KEY, JSON.stringify(list));
+      localStorage.setItem(LS_CONTINUE_KEY, JSON.stringify(list || []));
     }
 
     function itemKey(item) {
@@ -1041,7 +1150,9 @@
       } else if (meta.type === "anime") {
         const episode = meta.episode || 1;
         const dubParam = meta.isDub ? "true" : "false";
-        base = `https://player.vidplus.to/embed/anime/${meta.anilistId}/${episode}?dub=${dubParam}`;
+        const animeId = meta.anilistId || meta.id;
+        if (!animeId) return "";
+        base = `https://player.vidplus.to/embed/anime/${animeId}/${episode}?dub=${dubParam}`;
       } else {
         return "";
       }
@@ -1052,6 +1163,21 @@
 
       const sep = base.includes("?") ? "&" : "?";
       return `${base}${sep}${query}`;
+    }
+
+    async function checkPlayerAvailability() {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
+      try {
+        await fetch(VIDPLUS_PROBE_URL, { method: "HEAD", mode: "no-cors", signal: controller.signal });
+        state.playerReachable = true;
+        setPlayerStatus("Streaming ready via VidPlus.");
+      } catch {
+        state.playerReachable = false;
+        setPlayerStatus("Streaming provider unreachable or blocked. Playback disabled in this environment.", true);
+      } finally {
+        clearTimeout(timeout);
+      }
     }
 
     // =========================
@@ -1134,22 +1260,30 @@
     }
 
     async function fetchPopularMovies() {
+      if (!TMDB_API_KEY || TMDB_API_KEY === "REPLACE_WITH_YOUR_TMDB_KEY") {
+        return SAMPLE_LIBRARY.movies;
+      }
       try {
         const data = await tmdbFetch("/movie/popular", { region: REGION });
-        return (data.results || []).map(normalizeTmdbMovie);
+        const items = (data.results || []).map(normalizeTmdbMovie);
+        return items.length ? items : SAMPLE_LIBRARY.movies;
       } catch (e) {
         console.warn("Popular movies error", e);
-        return [];
+        return SAMPLE_LIBRARY.movies;
       }
     }
 
     async function fetchPopularTV() {
+      if (!TMDB_API_KEY || TMDB_API_KEY === "REPLACE_WITH_YOUR_TMDB_KEY") {
+        return SAMPLE_LIBRARY.tv;
+      }
       try {
         const data = await tmdbFetch("/tv/popular", { region: REGION });
-        return (data.results || []).map(normalizeTmdbTV);
+        const items = (data.results || []).map(normalizeTmdbTV);
+        return items.length ? items : SAMPLE_LIBRARY.tv;
       } catch (e) {
         console.warn("Popular tv error", e);
-        return [];
+        return SAMPLE_LIBRARY.tv;
       }
     }
 
@@ -1171,10 +1305,11 @@
       `;
       try {
         const data = await anilistFetch(query, { page: 1, perPage: 18 });
-        return (data.Page.media || []).map(normalizeAnilistAnime);
+        const items = (data.Page.media || []).map(normalizeAnilistAnime);
+        return items.length ? items : SAMPLE_LIBRARY.anime;
       } catch (e) {
         console.warn("Popular anime error", e);
-        return [];
+        return SAMPLE_LIBRARY.anime;
       }
     }
 
@@ -1182,6 +1317,7 @@
       const q = queryText.trim();
       if (!q) return [];
       const tasks = [];
+      const qLower = q.toLowerCase();
 
       if (TMDB_API_KEY && TMDB_API_KEY !== "REPLACE_WITH_YOUR_TMDB_KEY") {
         tasks.push(
@@ -1216,7 +1352,17 @@
       );
 
       const [movies, tv, anime] = await Promise.all(tasks);
-      return [...movies, ...tv, ...anime].slice(0, 40);
+      const combined = [...movies, ...tv, ...anime];
+      if (combined.length) return combined.slice(0, 40);
+
+      const samplePool = [
+        ...SAMPLE_LIBRARY.movies,
+        ...SAMPLE_LIBRARY.tv,
+        ...SAMPLE_LIBRARY.anime
+      ];
+      return samplePool
+        .filter(item => item.title.toLowerCase().includes(qLower))
+        .slice(0, 40);
     }
 
     async function fetchTVDetails(tmdbId) {
@@ -1286,6 +1432,13 @@
     // =========================
     const $ = (id) => document.getElementById(id);
 
+    function setPlayerStatus(text, isError = false) {
+      const el = $("player-status");
+      if (!el) return;
+      el.textContent = text;
+      el.classList.toggle("error", !!isError);
+    }
+
     function createCard(item) {
       const div = document.createElement("div");
       div.className = "card";
@@ -1349,7 +1502,7 @@
     }
 
     function renderWatchlistSection() {
-      const list = getWatchlist();
+      const list = getWatchlist() || [];
       const empty = $("watchlist-empty");
       if (!list.length) {
         $("watchlist-carousel").innerHTML = "";
@@ -1361,7 +1514,7 @@
     }
 
     function renderContinueSection() {
-      const list = getContinueList();
+      const list = getContinueList() || [];
       const empty = $("continue-empty");
       if (!list.length) {
         $("continue-carousel").innerHTML = "";
@@ -1509,6 +1662,22 @@
       if (!state.currentItem) return;
       const url = buildVidplusUrl(state.currentItem);
       const iframe = $("vidplus-player");
+
+      if (!state.playerReachable) {
+        iframe.src = "about:blank";
+        setPlayerStatus("Streaming provider unreachable or blocked. Playback disabled in this environment.", true);
+        $("watch-hint").textContent = "Playback unavailable: external player blocked.";
+        return;
+      }
+
+      if (!url) {
+        iframe.src = "about:blank";
+        setPlayerStatus("No playable stream available for this title.", true);
+        $("watch-hint").textContent = "No playable source detected.";
+        return;
+      }
+
+      setPlayerStatus("Loading stream via VidPlus…");
       iframe.src = url;
 
       if (!skipUpdateContinue) {
@@ -1531,6 +1700,7 @@
         state.currentItem.episode = state.currentItem.episode || 1;
       } else if (state.currentItem.type === "anime") {
         state.currentItem.episode = state.currentItem.episode || 1;
+        state.currentItem.anilistId = state.currentItem.anilistId || state.currentItem.id;
         state.currentItem.isDub = false;
       }
 
@@ -1719,6 +1889,7 @@
 
     window.addEventListener("DOMContentLoaded", async () => {
       wireEvents();
+      await checkPlayerAvailability();
       setView("home");
       initHome();
     });
