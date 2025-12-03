@@ -546,6 +546,27 @@
       display: block;
     }
 
+    .player-status {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(10, 10, 14, 0.78);
+      color: #d0d0dc;
+      font-size: 12px;
+      letter-spacing: 0.01em;
+      border: 1px solid rgba(255,255,255,0.08);
+      max-width: calc(100% - 24px);
+      pointer-events: none;
+    }
+
+    .player-status.error {
+      color: #ffdede;
+      border-color: rgba(255, 105, 105, 0.7);
+      background: rgba(64, 10, 10, 0.78);
+    }
+
     .watch-controls-row {
       margin-top: 0.6rem;
       display: flex;
@@ -833,7 +854,7 @@
         ← Back to Home
       </button>
 
-      <div class="watch-layout" style="margin-top:0.7rem;">
+          <div class="watch-layout" style="margin-top:0.7rem;">
         <div class="watch-main">
           <div class="player-wrapper">
             <iframe
@@ -842,6 +863,7 @@
               allowfullscreen
               allow="autoplay; encrypted-media"
             ></iframe>
+            <div class="player-status" id="player-status"></div>
           </div>
           <div class="watch-controls-row">
             <div class="watch-controls-left">
@@ -925,6 +947,8 @@
       servericon: "false",
       server: "14"
     };
+
+    const VIDPLUS_PROBE_URL = "https://player.vidplus.to/embed/ping";
 
     const LS_WATCHLIST_KEY = "vidplus_watchlist";
     const LS_CONTINUE_KEY = "vidplus_continue";
@@ -1037,7 +1061,8 @@
       currentSeason: null,
       episodes: [],
       similar: [],
-      castEnabled: true
+      castEnabled: true,
+      playerReachable: false
     };
 
     // Utility: region from navigator.language
@@ -1136,6 +1161,21 @@
 
       const sep = base.includes("?") ? "&" : "?";
       return `${base}${sep}${query}`;
+    }
+
+    async function checkPlayerAvailability() {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
+      try {
+        await fetch(VIDPLUS_PROBE_URL, { method: "HEAD", mode: "no-cors", signal: controller.signal });
+        state.playerReachable = true;
+        setPlayerStatus("Streaming ready via VidPlus.");
+      } catch {
+        state.playerReachable = false;
+        setPlayerStatus("Streaming provider unreachable or blocked. Playback disabled in this environment.", true);
+      } finally {
+        clearTimeout(timeout);
+      }
     }
 
     // =========================
@@ -1390,6 +1430,13 @@
     // =========================
     const $ = (id) => document.getElementById(id);
 
+    function setPlayerStatus(text, isError = false) {
+      const el = $("player-status");
+      if (!el) return;
+      el.textContent = text;
+      el.classList.toggle("error", !!isError);
+    }
+
     function createCard(item) {
       const div = document.createElement("div");
       div.className = "card";
@@ -1613,6 +1660,22 @@
       if (!state.currentItem) return;
       const url = buildVidplusUrl(state.currentItem);
       const iframe = $("vidplus-player");
+
+      if (!state.playerReachable) {
+        iframe.src = "about:blank";
+        setPlayerStatus("Streaming provider unreachable or blocked. Playback disabled in this environment.", true);
+        $("watch-hint").textContent = "Playback unavailable: external player blocked.";
+        return;
+      }
+
+      if (!url) {
+        iframe.src = "about:blank";
+        setPlayerStatus("No playable stream available for this title.", true);
+        $("watch-hint").textContent = "No playable source detected.";
+        return;
+      }
+
+      setPlayerStatus("Loading stream via VidPlus…");
       iframe.src = url;
 
       if (!skipUpdateContinue) {
@@ -1823,6 +1886,7 @@
 
     window.addEventListener("DOMContentLoaded", async () => {
       wireEvents();
+      await checkPlayerAvailability();
       setView("home");
       initHome();
     });
