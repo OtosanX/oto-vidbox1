@@ -1150,7 +1150,9 @@
       } else if (meta.type === "anime") {
         const episode = meta.episode || 1;
         const dubParam = meta.isDub ? "true" : "false";
-        base = `https://player.vidplus.to/embed/anime/${meta.anilistId}/${episode}?dub=${dubParam}`;
+        const animeId = meta.anilistId || meta.id;
+        if (!animeId) return "";
+        base = `https://player.vidplus.to/embed/anime/${animeId}/${episode}?dub=${dubParam}`;
       } else {
         return "";
       }
@@ -1698,6 +1700,7 @@
         state.currentItem.episode = state.currentItem.episode || 1;
       } else if (state.currentItem.type === "anime") {
         state.currentItem.episode = state.currentItem.episode || 1;
+        state.currentItem.anilistId = state.currentItem.anilistId || state.currentItem.id;
         state.currentItem.isDub = false;
       }
 
